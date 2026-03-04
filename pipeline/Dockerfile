@@ -12,6 +12,7 @@ ENV PATH="/app/.venv/bin:$PATH"
 
 # Copy dependency files first (better layer caching)
 COPY "pyproject.toml" "uv.lock" ".python-version" ./
+
 # Install dependencies from lock file (ensures reproducible builds)
 RUN uv sync --locked
 
@@ -19,4 +20,4 @@ RUN uv sync --locked
 COPY pipeline.py pipeline.py
 
 # Set entry point
-ENTRYPOINT ["uv", "run", "python", "pipeline.py"]
+ENTRYPOINT ["python", "pipeline.py"]
