@@ -254,7 +254,7 @@ Note: it's tip , not trip. We need the name of the zone, not the ID.
 * East Harlem North  
 * LaGuardia Airport  
   
-```sql
+```postgresql
 WITH zone_totals AS (
     SELECT 
         puz."Zone" AS pickup_zone,
@@ -268,7 +268,7 @@ WITH zone_totals AS (
 		gtd.lpep_pickup_datetime >= '2025-11-01' AND
 		gtd.lpep_pickup_datetime < '2025-12-01'
     GROUP BY 1, 2
-)
+) 
 SELECT * FROM zone_totals 
 ORDER BY max_tip_amount DESC 
 LIMIT 1;
