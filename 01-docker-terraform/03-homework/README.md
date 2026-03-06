@@ -11,7 +11,7 @@ What's the version of pip in the image?
 * 23.3.1  
   
 ```shell
-$ docker run -it \
+docker run -it \
     --rm \
     --entrypoint=bash \
     python:3.13-slim
