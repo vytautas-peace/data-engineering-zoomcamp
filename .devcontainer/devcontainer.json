@@ -23,7 +23,8 @@
         "ms-azuretools.vscode-docker",
         "hashicorp.terraform",
         "dbtlabsinc.dbt",
-        "ms-python.python"
+        "ms-python.python",
+        "redhat.vscode-yaml"
       ]
     }
   }
