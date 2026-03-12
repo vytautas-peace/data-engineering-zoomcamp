@@ -12,7 +12,7 @@ renamed as (
         SR_Flag, 
         Affiliated_base_number as affiliated_base_number
     from source
-    -- Filter out records with null vendor_id (data quality requirement)
+    -- Filter out records with null dispatching_base_num (data quality requirement)
     where dispatching_base_num is not null
 )
 
