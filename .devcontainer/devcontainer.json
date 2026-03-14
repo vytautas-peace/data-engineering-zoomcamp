@@ -4,6 +4,9 @@
 
   "features": {
     "ghcr.io/devcontainers/features/git-lfs:1": {},
+    "ghcr.io/devcontainers/features/sshd:1": {
+      "version": "latest"
+    },
     "ghcr.io/devcontainers/features/python:1": {
       "version": "3.11"
 		},
@@ -14,7 +17,7 @@
     "ghcr.io/devcontainers/features/terraform:1": {}
   },
 
-  "postCreateCommand": "curl -fsSL https://public.cdn.getdbt.com/fs/install/install.sh | sh -s -- --update && curl -LsSf https://getbruin.com/install/cli | sh",
+  "postCreateCommand": "curl -fsSL https://public.cdn.getdbt.com/fs/install/install.sh | sh -s -- --update && curl -LsSf https://getbruin.com/install/cli | sh && curl https://install.duckdb.org | sh",
 
   "customizations": {
     "vscode": {
