@@ -2,7 +2,7 @@
 
 set -e
 
-MAX_PARALLEL=${PARALLEL:-4}
+MAX_PARALLEL=${PARALLEL:-8}
 URL_PREFIX="https://d37ci6vzurychx.cloudfront.net/trip-data"
 START_TIME=$(date +%s)
 JOBS=0
