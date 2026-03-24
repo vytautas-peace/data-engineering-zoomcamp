@@ -5,11 +5,11 @@ from dataclasses import dataclass
 
 @dataclass
 class Ride:
-    pickup_datetime: str  
-    dropoff_datetime: str 
+    lpep_pickup_datetime: str  
+    lpep_dropoff_datetime: str 
     PULocationID: int
     DOLocationID: int
-    passenger_count: float
+    passenger_count: int
     trip_distance: float
     tip_amount: float
     total_amount: float
@@ -17,11 +17,11 @@ class Ride:
 
 def ride_from_row(row):
     return Ride(
-        pickup_datetime=str(row['lpep_pickup_datetime']),
-        dropoff_datetime=str(row['lpep_dropoff_datetime']),
+        lpep_pickup_datetime=str(row['lpep_pickup_datetime']),
+        lpep_dropoff_datetime=str(row['lpep_dropoff_datetime']),
         PULocationID=int(row['PULocationID']),
         DOLocationID=int(row['DOLocationID']),
-        passenger_count=float(row['passenger_count']),
+        passenger_count=int(row['passenger_count']),
         trip_distance=float(row['trip_distance']),
         tip_amount=float(row['tip_amount']),
         total_amount=float(row['total_amount'])
