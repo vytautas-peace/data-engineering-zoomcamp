@@ -44,7 +44,6 @@ def create_events_aggregated_sink(t_env):
             window_end TIMESTAMP(3),
             PULocationID INT,
             num_trips BIGINT,
-            total_revenue DOUBLE,
             PRIMARY KEY (window_start, PULocationID) NOT ENFORCED
         ) WITH (
             'connector' = 'jdbc',
@@ -79,9 +78,12 @@ def log_aggregation():
                 window_start,
                 window_end,
                 PULocationID,
-                COUNT(*) AS num_trips,
-                SUM(total_amount) AS total_revenue
-            FROM SESSION(TABLE {source_table} PARTITION BY PULocationID, DESCRIPTOR(event_ts), INTERVAL '5' MINUTE)
+                count(1) as num_trips
+            FROM TABLE (
+                SESSION (
+                    TABLE {source_table} PARTITION BY PULocationID, DESCRIPTOR(event_ts), INTERVAL '5' MINUTE
+                )
+            )
             GROUP BY window_start, window_end, PULocationID;
             """
         ).wait()
