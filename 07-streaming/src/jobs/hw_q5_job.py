@@ -4,8 +4,6 @@
 
 from pyflink.datastream import StreamExecutionEnvironment
 from pyflink.table import EnvironmentSettings, StreamTableEnvironment
-import json
-import traceback
 import time
 
 
@@ -17,12 +15,12 @@ def create_events_source_kafka(t_env):
             lpep_dropoff_datetime VARCHAR,
             PULocationID INTEGER,
             DOLocationID INTEGER,
-            passenger_count DOUBLE,
+            passenger_count INTEGER,
             trip_distance DOUBLE,
             tip_amount DOUBLE,
             total_amount DOUBLE,
-            event_ts AS TO_TIMESTAMP(lpep_pickup_datetime, 'yyyy-MM-dd HH:mm:ss'),
-            WATERMARK for event_ts as event_ts - INTERVAL '5' SECOND
+            event_timestamp AS TO_TIMESTAMP(lpep_pickup_datetime, 'yyyy-MM-dd HH:mm:ss'),
+            WATERMARK for event_timestamp as event_timestamp - INTERVAL '5' SECOND
         ) WITH (
             'connector' = 'kafka',
             'properties.bootstrap.servers' = 'redpanda:29092',
@@ -40,11 +38,11 @@ def create_events_aggregated_sink(t_env):
     table_name = 'output_q5'
     sink_ddl = f"""
         CREATE TABLE {table_name} (
-            window_start TIMESTAMP(3),
-            window_end TIMESTAMP(3),
-            PULocationID INT,
+            PULocationID INTEGER,
+            session_start TIMESTAMP(3),
+            session_end TIMESTAMP(3),
             num_trips BIGINT,
-            PRIMARY KEY (window_start, PULocationID) NOT ENFORCED
+            PRIMARY KEY (PULocationID, session_start, session_end) NOT ENFORCED
         ) WITH (
             'connector' = 'jdbc',
             'url' = 'jdbc:postgresql://postgres:5432/postgres',
@@ -60,33 +58,44 @@ def create_events_aggregated_sink(t_env):
 
 def log_aggregation():
     env = StreamExecutionEnvironment.get_execution_environment()
-#   env.enable_checkpointing(10 * 1000)
+    env.enable_checkpointing(10 * 1000)
     env.set_parallelism(1)
 
     settings = EnvironmentSettings.new_instance().in_streaming_mode().build()
     t_env = StreamTableEnvironment.create(env, environment_settings=settings)
 
     try:
-
         source_table = create_events_source_kafka(t_env)
         aggregated_table = create_events_aggregated_sink(t_env)
 
-        t_env.execute_sql(
-            f"""
-            INSERT INTO {aggregated_table}
+        # 1. CREATE THE VIEW (This fixes the 'view not found' error)
+        t_env.execute_sql(f"""
+            CREATE TEMPORARY VIEW session_stats AS
             SELECT
-                window_start,
-                window_end,
                 PULocationID,
-                count(1) as num_trips
+                window_start AS session_start,
+                window_end AS session_end,
+                COUNT(*) AS num_trips
             FROM TABLE (
                 SESSION (
-                    TABLE {source_table} PARTITION BY PULocationID, DESCRIPTOR(event_ts), INTERVAL '5' MINUTE
+                    TABLE {source_table}, 
+                    DESCRIPTOR(event_timestamp), 
+                    INTERVAL '5' MINUTE
                 )
             )
-            GROUP BY window_start, window_end, PULocationID;
-            """
-        ).wait()
+            GROUP BY PULocationID, window_start, window_end
+        """)
+
+        # 2. TRIGGER THE JOB (This sends data to Postgres)
+        # Note: We do NOT use .wait() or .print() here so the script can proceed
+        print("Submitting job to Flink...")
+        t_env.execute_sql(f"INSERT INTO {aggregated_table} SELECT * FROM session_stats").wait()
+
+        # 3. MANUAL OBSERVATION (This allows you to see the count climb)
+        print("Job submitted. Monitoring for 60 seconds...")
+        for i in range(12):
+            time.sleep(5)
+            print(f"Checking progress... {5 * (i+1)}s elapsed")
 
     except Exception as e:
         print("Writing records from Kafka to JDBC failed:", str(e))
